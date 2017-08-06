@@ -29,49 +29,59 @@ int main()
     d[i] = Direction::EDir::RIGHT;
   for (size_t i = ind; i < d.size(); ++i)
     d[i] = Direction::EDir::UP;
-  
-  Task problem(initial);
 
+  Task problem(initial);
+  NeighbourProcessor proc(d);
+  int min_energy = 0;
   while (true) {
     //std::cout << "iter" << std::endl;
     auto coord0 = problem.GetCoords(d);
-    int min_energy = ComputeEnergy(grid, n - 1, coord0);
+    min_energy = ComputeEnergy(grid, n - 1, coord0);
     auto min_dir = d;
-
-    auto neighbours = GetNeighbourDirections(d, 2);
-    for (const auto& ne : neighbours) {
+    bool stop = true;
+    while (!proc.Finished())
+      {
+      const auto& ne = proc.GetCurrentNeighbour();
       auto coord1 = problem.GetCoords(ne);
-      if (SelfIntersection(grid, n - 1, coord1))
+      if (SelfIntersection(grid, n - 1, coord1)) {
+        ++proc;
         continue;
-
+        }
+        
       int energy1 = ComputeEnergy(grid, n - 1, coord1);
       if (energy1 < min_energy) {
         min_energy = energy1;
         min_dir = ne;
+        stop = false;
+        proc.SetUp();
+        break;
         }
+
+      ++proc;
       }
 
-    if (min_dir == d)
+    if (stop)
       break;
 
     d = min_dir;
     }
-  
-  for (const auto& dir : d) {
-    if (dir == Direction::EDir::UP)
-      std::cout << "UP" << std::endl;
-    else if (dir == Direction::EDir::RIGHT)
-      std::cout << "RIGHT" << std::endl;
-    else if (dir == Direction::EDir::DOWN)
-      std::cout << "DOWN" << std::endl;
-    else if (dir == Direction::EDir::LEFT)
-      std::cout << "LEFT" << std::endl;
-    else if (dir == Direction::EDir::FRONT)
-      std::cout << "FRONT" << std::endl;
-    else if (dir == Direction::EDir::BACK)
-      std::cout << "BACK" << std::endl;
-    }
 
-  system("pause");
-  return 0;
+for (const auto& dir : d) {
+  if (dir == Direction::EDir::UP)
+    std::cout << "UP" << std::endl;
+  else if (dir == Direction::EDir::RIGHT)
+    std::cout << "RIGHT" << std::endl;
+  else if (dir == Direction::EDir::DOWN)
+    std::cout << "DOWN" << std::endl;
+  else if (dir == Direction::EDir::LEFT)
+    std::cout << "LEFT" << std::endl;
+  else if (dir == Direction::EDir::FRONT)
+    std::cout << "FRONT" << std::endl;
+  else if (dir == Direction::EDir::BACK)
+    std::cout << "BACK" << std::endl;
+  }
+
+std::cout << min_energy << std::endl;
+system("pause");
+return 0;
   }

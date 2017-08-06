@@ -3,6 +3,8 @@
 #include <limits>
 #include <array>
 
+#include <iostream>
+
 bool SelfIntersection(std::vector<std::vector<std::vector<char>>>& grid, 
   int shift, const std::vector<std::pair<TCoord, char>>& i_chain)
   {
@@ -87,29 +89,59 @@ int ComputeEnergy(std::vector<std::vector<std::vector<char>>>& grid, int shift,
   return -energy;
   }
 
-void _GetNeighbourDirections(std::vector<std::vector<Direction::EDir>>& result,
-  std::vector<Direction::EDir>& dir, size_t pos, size_t radius) {
-  if (radius == 0) {
-    result.push_back(dir);
-    return;
-    }
-    
-  for (size_t i = pos; i < dir.size(); ++i) {
-    for (int j = 0; j < 6; ++j) {
-      if (j == dir[i])
-        continue;
-      auto temp = dir[i];
-      dir[i] = static_cast<Direction::EDir>(j);
-      _GetNeighbourDirections(result, dir, pos + 1, radius - 1);
-      dir[i] = temp;
+NeighbourProcessor& NeighbourProcessor::operator++() {
+  ++m_counter;
+  m_current[r_cur] = static_cast<Direction::EDir>((m_current[r_cur] + 1) % 6);
+  if (m_current[r_cur] == 0) {
+    m_current[r_cur] = m_initial[r_cur];
+    ++r_cur;
+    if (r_cur >= m_current.size()) {
+      if (l_cur != -1) {
+        m_current[l_cur] = static_cast<Direction::EDir>((m_current[l_cur] + 1) % 6);
+        if (m_current[l_cur] == 0) {
+          m_current[l_cur] = m_initial[l_cur];
+          ++l_cur;
+          if (l_cur == r_cur - 1) {
+            l_cur = -1;
+            r_cur = 0;
+            m_current[r_cur] = static_cast<Direction::EDir>(0);
+            }
+          else {
+            m_current[l_cur] = static_cast<Direction::EDir>(0);
+            r_cur = l_cur + 1;
+            m_current[r_cur] = static_cast<Direction::EDir>(0);
+            }
+          }
+        else {
+          r_cur = l_cur + 1;
+          m_current[r_cur] = static_cast<Direction::EDir>(0);
+          }
+        }
+      else {
+        ++l_cur;
+        m_current[l_cur] = static_cast<Direction::EDir>(0);
+        r_cur = l_cur + 1;
+        m_current[r_cur] = static_cast<Direction::EDir>(0);
+        }
+      }
+    else {
+      m_current[r_cur] = static_cast<Direction::EDir>(0);
       }
     }
+
+  return *this;
   }
 
-std::vector<std::vector<Direction::EDir>> GetNeighbourDirections(const std::vector<Direction::EDir>& i_directions, size_t i_radius) {
-  auto dir = i_directions;
-  std::vector<std::vector<Direction::EDir>> result;
-  _GetNeighbourDirections(result, dir, 0, i_radius);
-  
-  return result;
+bool NeighbourProcessor::Finished() const{
+  const int limit = ((m_initial.size() * (m_initial.size() - 1) * 36) / 2) + m_initial.size() * 6;
+  return m_counter >= limit;
+  }
+
+const std::vector<Direction::EDir>& NeighbourProcessor::GetCurrentNeighbour() const {
+  return m_current;
+  }
+
+void NeighbourProcessor::SetUp() {
+  m_counter = 0;
+  m_initial = m_current;
   }
