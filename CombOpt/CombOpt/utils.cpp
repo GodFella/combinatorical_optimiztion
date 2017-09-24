@@ -40,9 +40,9 @@ int ComputeEnergy(std::vector<std::vector<std::vector<char>>>& grid, int shift,
   int energy = 0;
   std::vector<std::array<int, 3>> gaps = { {1, 0, 0},{-1, 0, 0},{0, 1, 0},{0, -1, 0},{0, 0, 1}, {0, 0, -1} };
   
-  for (const auto& c : i_chain) {
-    const auto& coord = c.first;
-    if (c.second == 1) {
+  for (size_t i = 0; i < i_chain.size(); ++i) {
+    const auto& coord = i_chain[i].first;
+    if (i_chain[i].second == 1) {
       std::array<int, 3> temp = { 
         std::get<0>(coord) + shift, 
         std::get<1>(coord) + shift, 
@@ -56,35 +56,21 @@ int ComputeEnergy(std::vector<std::vector<std::vector<char>>>& grid, int shift,
         if (cur[0] >= 0 && cur[0] < grid.size() &&
           cur[1] >= 0 && cur[1] < grid[0].size() && cur[2] >= 0 && cur[2] < grid[0][0].size())
           {
-          if (grid[cur[0]][cur[1]][cur[2]] == 1)
+          std::array<int, 3> next = {};
+          std::array<int, 3> prev = { -shift - 1, -shift - 1, -shift -1 };
+          std::tie(next[0], next[1], next[2]) = i_chain[(i + 1) % i_chain.size()].first;
+          if(i != 0)
+            std::tie(prev[0], prev[1], prev[2]) = i_chain[(i - 1)].first;
+          next[0] += shift; next[1] += shift; next[2] += shift;
+          prev[0] += shift; prev[1] += shift; prev[2] += shift;
+          
+          if (grid[cur[0]][cur[1]][cur[2]] == 1 && cur != next && cur != prev)
             ++energy;
           }
         }
       grid[temp[0]][temp[1]][temp[2]] = 0;
       }
     }
-  /*
-  for (size_t i = 0; i < grid.size(); ++i) {
-    for (size_t j = 0; j < grid[0].size(); ++j) {
-      for (size_t k = 0; k < grid[0][0].size(); ++k) {
-        if (grid[i][j][k] == 0)
-          continue;
-        for (const auto& g : gaps) {
-          std::array<int, 3> cur = { i, j, k };
-          cur[0] += g[0];
-          cur[1] += g[1];
-          cur[2] += g[2];
-          if (cur[0] >= 0 && cur[0] < grid.size() &&
-            cur[1] >= 0 && cur[1] < grid[0].size() && cur[2] >= 0 && cur[2] < grid[0][0].size())
-            {
-            if (grid[cur[0]][cur[1]][cur[2]] == 1)
-              ++energy;
-            }
-          }
-        grid[i][j][k] = 0;
-        }
-      }
-    }*/
 
   return -energy;
   }
@@ -133,12 +119,15 @@ NeighbourProcessor& NeighbourProcessor::operator++() {
   }
 
 bool NeighbourProcessor::Finished() const{
-  const int limit = ((m_initial.size() * (m_initial.size() - 1) * 36) / 2) + m_initial.size() * 6;
-  return m_counter >= limit;
+  return m_counter >= m_limit;
   }
 
 const std::vector<Direction::EDir>& NeighbourProcessor::GetCurrentNeighbour() const {
   return m_current;
+  }
+
+int NeighbourProcessor::GetRadiusSize() const {
+  return m_limit;
   }
 
 void NeighbourProcessor::SetUp() {
