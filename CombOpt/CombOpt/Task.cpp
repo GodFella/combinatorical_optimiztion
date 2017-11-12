@@ -34,19 +34,19 @@ std::vector<std::pair<TCoord, char>> Task::GetCoords(const std::vector<Direction
 std::vector<Direction::EDir> Task::GRASP_Path() const {
   srand((std::chrono::system_clock::now().time_since_epoch().count(), 100));
   
-  TCoord cur(0, 0, 0);
-  auto prev = cur;
   std::vector<Direction::EDir> result;
+  std::vector<TCoord> coordinates;
+  coordinates.emplace_back(0, 0, 0);
 
   std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
   std::set<TCoord> visited;
-  visited.insert(cur);
+  visited.insert(coordinates.back());
 
-  for (size_t i = 1; i < m_chain.size(); ++i) {
+  while (result.size() < m_chain.size() - 1) {
     
     std::vector<TCoord> cur_possible;
     for (const auto& g : gaps) {
-      auto temp = cur;
+      auto temp = coordinates.back();
       std::get<0>(temp) += g[0];
       std::get<1>(temp) += g[1];
       std::get<2>(temp) += g[2];
@@ -54,10 +54,14 @@ std::vector<Direction::EDir> Task::GRASP_Path() const {
         cur_possible.push_back(temp);
       }
 
-    cur = cur_possible[rand() % cur_possible.size()];
     if (cur_possible.empty()) {
-      int k = 0;
+      visited.erase(coordinates.back());
+      coordinates.pop_back();
+      result.pop_back();
       }
+    coordinates.push_back(cur_possible[rand() % cur_possible.size()]);
+    const auto& cur = coordinates.back();
+    const auto& prev = coordinates[coordinates.size() - 2];
     if (std::get<0>(cur) - std::get<0>(prev) == -1)
       result.push_back(Direction::EDir::LEFT);
     else if(std::get<0>(cur) - std::get<0>(prev) == 1)
@@ -72,7 +76,6 @@ std::vector<Direction::EDir> Task::GRASP_Path() const {
       result.push_back(Direction::EDir::UP);
     
     visited.insert(cur);
-    prev = cur;
     }
 
   return result;

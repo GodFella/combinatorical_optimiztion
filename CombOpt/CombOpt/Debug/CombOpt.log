@@ -1,4 +1,5 @@
 ﻿  main.cpp
-d:\cppprojects\projects\git\combopt\combopt\main.cpp(56): warning C4244: 'argument': conversion from 'std::chrono::system_clock::rep' to 'unsigned int', possible loss of data
+d:\cppprojects\projects\git\combopt\combopt\main.cpp(77): warning C4244: 'argument': conversion from 'std::chrono::system_clock::rep' to 'unsigned int', possible loss of data
+d:\cppprojects\projects\git\combopt\combopt\main.cpp(125): warning C4018: '>=': signed/unsigned mismatch
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.exe
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.pdb (Partial PDB)
