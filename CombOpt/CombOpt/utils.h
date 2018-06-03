@@ -1,12 +1,15 @@
 #pragma once
 #include "task.h"
 
+#include <map>
 #include <vector>
 
 
 bool SelfIntersection(std::vector<std::vector<std::vector<char>>>& grid, int shift, const std::vector<std::pair<TCoord, char>>& i_chain);
+double ComputeEnergyPhysics(std::vector<std::vector<std::vector<char>>>& grid, int shift,
+  const std::vector<std::pair<TCoord, char>>& i_chain);
 int ComputeEnergy(std::vector<std::vector<std::vector<char>>>& grid, int shift, const std::vector<std::pair<TCoord, char>>& i_chain);
-
+double FitnessFunction(const std::vector<std::pair<TCoord, char>>& i_chain);
 
 class NeighbourProcessor {
 private:
@@ -24,7 +27,15 @@ public:
     {}
   NeighbourProcessor& operator++ ();
   bool Finished() const;
+  int GetCounter() const;
   const std::vector<Direction::EDir>& GetCurrentNeighbour() const;
   int GetRadiusSize() const;
+  void print() const;
   void SetUp();
   };
+
+namespace aco {
+  using TMemory = std::map<std::pair<std::string, std::string>, double>;
+  
+  std::vector<std::pair<std::string, size_t>> generatePath(const TMemory& i_memory, size_t i_size, TMemory& o_local_memory);
+  }

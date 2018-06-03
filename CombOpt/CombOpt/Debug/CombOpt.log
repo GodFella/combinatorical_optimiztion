@@ -1,5 +1,48 @@
-﻿  main.cpp
-d:\cppprojects\projects\git\combopt\combopt\main.cpp(77): warning C4244: 'argument': conversion from 'std::chrono::system_clock::rep' to 'unsigned int', possible loss of data
-d:\cppprojects\projects\git\combopt\combopt\main.cpp(125): warning C4018: '>=': signed/unsigned mismatch
+﻿  utils.cpp
+d:\cppprojects\projects\git\combopt\combopt\utils.cpp(79): warning C4018: '<': signed/unsigned mismatch
+d:\cppprojects\projects\git\combopt\combopt\utils.cpp(80): warning C4018: '<': signed/unsigned mismatch
+d:\cppprojects\projects\git\combopt\combopt\utils.cpp(156): warning C4018: '>=': signed/unsigned mismatch
+  main.cpp
+d:\cppprojects\projects\git\combopt\combopt\main.cpp(159): warning C4018: '>=': signed/unsigned mismatch
+c:\program files (x86)\vs\vc\include\tuple(164): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+  c:\program files (x86)\vs\vc\include\tuple(304): note: see reference to function template instantiation 'std::_Tuple_val<_This>::_Tuple_val<double&>(_Other)' being compiled
+          with
+          [
+              _This=int,
+              _Other=double &
+          ]
+  c:\program files (x86)\vs\vc\include\tuple(303): note: see reference to function template instantiation 'std::_Tuple_val<_This>::_Tuple_val<double&>(_Other)' being compiled
+          with
+          [
+              _This=int,
+              _Other=double &
+          ]
+  c:\program files (x86)\vs\vc\include\tuple(469): note: see reference to function template instantiation 'std::tuple<int>::tuple<std::_Exact_args_t,double&,,0>(_Tag,_This2)' being compiled
+          with
+          [
+              _Tag=std::_Exact_args_t,
+              _This2=double &
+          ]
+  c:\program files (x86)\vs\vc\include\tuple(467): note: see reference to function template instantiation 'std::tuple<int>::tuple<std::_Exact_args_t,double&,,0>(_Tag,_This2)' being compiled
+          with
+          [
+              _Tag=std::_Exact_args_t,
+              _This2=double &
+          ]
+  d:\cppprojects\projects\git\combopt\combopt\main.cpp(180): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
+          with
+          [
+              _Ty=Direction::EDir,
+              _This2=std::vector<Direction::EDir,std::allocator<Direction::EDir>> &
+          ]
+  d:\cppprojects\projects\git\combopt\combopt\main.cpp(180): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
+          with
+          [
+              _Ty=Direction::EDir,
+              _This2=std::vector<Direction::EDir,std::allocator<Direction::EDir>> &
+          ]
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  Task.cpp
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.exe
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.pdb (Partial PDB)
