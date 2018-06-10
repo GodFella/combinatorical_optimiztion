@@ -1,8 +1,4 @@
-﻿  utils.cpp
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(79): warning C4018: '<': signed/unsigned mismatch
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(80): warning C4018: '<': signed/unsigned mismatch
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(156): warning C4018: '>=': signed/unsigned mismatch
-  main.cpp
+﻿  main.cpp
 d:\cppprojects\projects\git\combopt\combopt\main.cpp(159): warning C4018: '>=': signed/unsigned mismatch
 c:\program files (x86)\vs\vc\include\tuple(164): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
   c:\program files (x86)\vs\vc\include\tuple(304): note: see reference to function template instantiation 'std::_Tuple_val<_This>::_Tuple_val<double&>(_Other)' being compiled
@@ -41,8 +37,5 @@ c:\program files (x86)\vs\vc\include\tuple(164): warning C4244: 'initializing': 
               _Ty=Direction::EDir,
               _This2=std::vector<Direction::EDir,std::allocator<Direction::EDir>> &
           ]
-  Generating Code...
-  Skipping... (no relevant changes detected)
-  Task.cpp
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.exe
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.pdb (Partial PDB)

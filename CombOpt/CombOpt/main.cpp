@@ -380,41 +380,89 @@ void Train() {
   }
 
 struct ACOParams {
-  size_t generation_am_;
-  size_t ants_in_generation_;
-  std::function<double(double)> pheremon_aspiration_;
+  size_t generation_am_ = 500;
+  size_t ants_in_generation_ = 200;
+  double rho_ = 0.1;
+  std::function<double(int)> pheromon_calc;
   };
 
-std::tuple<std::vector<Direction::EDir>, int> ACO(const Task& i_problem, const ACOParams& i_aco) {
+std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams& i_aco, const std::string& i_mask) {
   aco::TMemory memory;
   int min_energy = 0;
   std::vector<std::string> min_path;
 
   srand((std::chrono::system_clock::now().time_since_epoch().count(), 100));
   for (size_t g_idx = 0; g_idx < i_aco.generation_am_; ++g_idx) {
+    std::vector<aco::TMemory> local_memories;
+    std::cout << " generation " << g_idx << std::endl;
     for (size_t a_idx = 0; a_idx < i_aco.ants_in_generation_; ++a_idx) {
-      aco::TMemory local_memory;
-      const auto& path = aco::generatePath(memory, i_problem.getSize(), local_memory);
+      const auto& path = aco::generatePath(memory, chain_size);
       if (aco::hasIntersections(path)) {
         continue;
         }
-      for (const auto& l_m : local_memory) {
-          memory[l_m.first] += l_m.second;
-        }
-      int cur_energy = aco::computeEnergy(path);
+
+      int cur_energy = aco::computeEnergy(path, i_mask);
       if (cur_energy < min_energy) {
         min_energy = cur_energy;
         min_path = path;
         }
+
+      local_memories.emplace_back();
+      const double delta_tau = i_aco.pheromon_calc(std::abs(cur_energy));
+      for (size_t i = 0; i < path.size() - 1; ++i) {
+        auto p = std::make_pair(path[i], path[i + 1]);
+        if (p.first > p.second) {
+          std::swap(p.first, p.second);
+          }
+        local_memories.back()[p] += delta_tau;
+        }
       }
-    aco::pheromon_expire(memory);
+
+    for (const auto& mem : local_memories) {
+      for (const auto& fragment : mem) {
+        memory[fragment.first] += fragment.second;
+        }
+      }
+
+    aco::pheromon_expire(memory, i_aco.rho_);
+
+    std::cout << "    " << min_energy << std::endl;
     }
+
+  return { min_path, min_energy };
   }
 
 int main() {
   //Train();
-  Compare();
+  //Compare();
 
+  std::ifstream fi("input.txt");
+  std::ofstream fo("output.txt");
+  size_t m = 0;
+  fi >> m;
+  
+  for (size_t i = 0; i < m; ++i) {
+    std::string str;
+    fi >> str;
+
+    ACOParams params;
+    params.pheromon_calc = [str](int val) -> double {
+      const double prop = static_cast<double>(val) / static_cast<double>(str.size());
+      const double e = std::exp(prop);
+      return e / (e + 1);
+      };
+
+    std::vector<std::string> result;
+    int energy = 0;
+    std::tie(result, energy) = ACO(str.size(), params, str);
+
+    std::cout << "Min energy = " << energy << std::endl;
+    for (const auto& s : result) {
+      std::cout << s << std::endl;
+      }
+    }
+
+ 
   system("pause");
   return 0;
   }

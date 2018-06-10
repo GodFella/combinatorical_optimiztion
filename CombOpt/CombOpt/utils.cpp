@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <numeric>
+#include <set>
 
 #include <iostream>
 
@@ -218,36 +219,53 @@ void NeighbourProcessor::SetUp() {
   m_initial = m_current;
   }
 
+namespace {
+  inline std::string serialize(const std::array<int, 3>& i_arr) {
+    return std::to_string(i_arr[0]) + " " + std::to_string(i_arr[1]) + " " + std::to_string(i_arr[2]);
+    }
+  std::array<int, 3> deserialize(const std::string& i_serialized) {
+    std::stringstream ss;
+    ss << i_serialized;
+    std::array<int, 3> result = { { 0, 0, 0 } };
+    for (size_t j = 0; j < 3; ++j) {
+      ss >> result[j];
+      }
+
+    return result;
+    }
+  }
+
 namespace aco {
-  std::vector<std::pair<std::string, size_t>> generatePath(const TMemory& i_memory, size_t i_size, TMemory& o_local_memory) {
-    std::vector<std::pair<std::string, size_t>> result;
-    result.emplace_back("0 0 0", 0);
+  std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size) {
+    
+    std::vector<std::string> result;
+    result.push_back("0 0 0");
     std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
     auto pre_last = result.back();
     for (size_t i = 1; i < i_size; ++i) {
-      std::stringstream ss;
-      ss << result.back().first;
-      std::array<int, 3> last_pos = { { 0, 0, 0 } };
-      for (size_t j = 0; j < 3; ++j) {
-        ss >> last_pos[j];
-        }
-      ss << pre_last.first;
-      std::array<int, 3> pre_last_pos = { { 0, 0, 0 } };
-      for (size_t j = 0; j < 3; ++j) {
-        ss >> pre_last_pos[j];
-        }
-
+      std::array<int, 3> last_pos = deserialize(result.back());
+      std::array<int, 3> pre_last_pos = deserialize(pre_last);
       std::vector<double> pherom;
+      std::vector<std::array<int, 3>> poss_pos;
       for (const auto& g : gaps) {
         std::array<int, 3> cur = { last_pos[0] + g[0], last_pos[1] + g[1], last_pos[2] + g[2] };
         if (cur == pre_last_pos) {
           continue;
           }
-        std::array<std::string, 2> edge = { stringify(cur), result.back().first };
+        std::array<std::string, 2> edge = { serialize(cur), result.back() };
         if (edge[0] > edge[1]) {
           std::swap(edge[0], edge[1]);
           }
-        pherom.push_back(i_memory.at({ edge[0], edge[1] }));
+
+        const auto& checked_pair = std::make_pair(edge[0], edge[1]);
+        if (i_memory.find(checked_pair) != i_memory.end()) {
+          pherom.push_back(i_memory.at(checked_pair));
+          }
+        else {
+          pherom.push_back(200.0);
+          }
+        
+        poss_pos.push_back(cur);
         }
 
       double sum = std::accumulate(std::begin(pherom), std::end(pherom), 0.0);
@@ -256,8 +274,66 @@ namespace aco {
         pherom[i] /= sum;
         pherom[i] += pherom[i - 1];
         }
+
+      pherom.back() = 1.01;
       double rand_val = static_cast<double>(rand() % 10000) / 10000.0;
-      std::lower_bound
+      pre_last = result.back();
+      result.push_back(
+        serialize(poss_pos[std::distance(
+          std::begin(pherom), 
+          std::lower_bound(std::begin(pherom), std::end(pherom), rand_val)
+          )]));
+      } 
+    
+    return result;
+    }
+
+  bool hasIntersections(const std::vector<std::string>& i_path) {
+    std::set<std::string> visited;
+    for (const auto& p : i_path) {
+      if (visited.count(p)) {
+        return true;
+        }
+      else {
+        visited.insert(p);
+        }
+      }
+    
+    return false;
+    }
+
+  int computeEnergy(const std::vector<std::string>& i_path, const std::string& i_mask) {
+    std::map<std::string, size_t> info;
+    for (size_t i = 0; i < i_path.size(); ++i) {
+      info[i_path[i]] = i;
+      }
+
+    int energy = 0;
+    std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
+    size_t idx = 0;
+    for (const auto& path_comp : i_path) {
+      const auto& last = deserialize(path_comp);
+      if (i_mask[idx] != '1') {
+        ++idx;
+        continue;
+        }
+      for (const auto& g : gaps) {
+        std::array<int, 3> cur = { {last[0] + g[0], last[1] + g[1], last[2] + g[2]} };
+        const auto& ser_cur = serialize(cur);
+        if (info.find(ser_cur) != std::end(info) && info[ser_cur] > idx + 1 && i_mask[info[ser_cur]] == '1') {
+          ++energy;
+          }
+        }
+      ++idx;
+      }
+    
+    return -energy;
+    }
+
+  void pheromon_expire(TMemory& io_memory, double rho) {
+    for (auto& m : io_memory) {
+      m.second = (1.0 - rho) * m.second;
       }
     }
-  }
+
+  } // namespace aco

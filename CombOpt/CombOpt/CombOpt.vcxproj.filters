@@ -34,9 +34,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Debug\input.txt">
+    <Text Include="Train.txt" />
+    <Text Include="input.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="Train.txt" />
   </ItemGroup>
 </Project>

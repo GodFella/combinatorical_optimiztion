@@ -26,6 +26,7 @@ class Task
     bool CheckDirections(const std::vector<Direction::EDir>& i_directions);
     std::vector<std::pair<TCoord, char>> GetCoords(const std::vector<Direction::EDir>& i_directions) const;
     std::vector<Direction::EDir> GRASP_Path() const;
+    size_t getSize() const;
 
   private:
     TCHain m_chain;

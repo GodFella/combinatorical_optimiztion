@@ -1,5 +1,5 @@
 ﻿  main.cpp
-main.cpp(158): warning C4018: '>=': signed/unsigned mismatch
+main.cpp(159): warning C4018: '>=': signed/unsigned mismatch
 C:\Program Files (x86)\VS\VC\include\tuple(164): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
   C:\Program Files (x86)\VS\VC\include\tuple(304): note: see reference to function template instantiation 'std::_Tuple_val<_This>::_Tuple_val<double&>(_Other)' being compiled
           with
@@ -25,22 +25,25 @@ C:\Program Files (x86)\VS\VC\include\tuple(164): warning C4244: 'initializing': 
               _Tag=std::_Exact_args_t,
               _This2=double &
           ]
-  main.cpp(179): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
+  main.cpp(180): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
           with
           [
               _Ty=Direction::EDir,
               _This2=std::vector<Direction::EDir,std::allocator<Direction::EDir>> &
           ]
-  main.cpp(179): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
+  main.cpp(180): note: see reference to function template instantiation 'std::tuple<std::vector<Direction::EDir,std::allocator<_Ty>>,int>::tuple<std::vector<_Ty,std::allocator<_Ty>>&,double&,0>(_This2,double &)' being compiled
           with
           [
               _Ty=Direction::EDir,
               _This2=std::vector<Direction::EDir,std::allocator<Direction::EDir>> &
           ]
+  Task.cpp
+  utils.cpp
+utils.cpp(83): warning C4018: '<': signed/unsigned mismatch
+utils.cpp(84): warning C4018: '<': signed/unsigned mismatch
+utils.cpp(160): warning C4018: '>=': signed/unsigned mismatch
   Generating code
-  2 of 1476 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    18 functions had inline decision re-evaluated but remain unchanged
+  All 1506 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Release\CombOpt.exe
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Release\CombOpt.pdb (Full PDB)

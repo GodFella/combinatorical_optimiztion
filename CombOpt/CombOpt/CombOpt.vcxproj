@@ -119,7 +119,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Debug\input.txt" />
+    <Text Include="input.txt" />
     <Text Include="Train.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

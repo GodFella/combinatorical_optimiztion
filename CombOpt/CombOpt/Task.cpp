@@ -108,3 +108,7 @@ bool Task::CheckDirections(const std::vector<Direction::EDir>& i_directions)
 
   return true;
   }
+
+size_t Task::getSize() const {
+  return m_chain.size();
+  }
