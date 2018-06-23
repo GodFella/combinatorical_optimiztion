@@ -233,6 +233,7 @@ namespace {
 
     return result;
     }
+
   }
 
 namespace aco {
@@ -241,27 +242,42 @@ namespace aco {
     std::vector<std::string> result;
     result.push_back("0 0 0");
     std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
-    auto pre_last = result.back();
-    for (size_t i = 1; i < i_size; ++i) {
+    std::set<std::string> visited_coords;
+    std::vector<std::set<std::string>> visited_rotations;
+    visited_rotations.emplace_back();
+    visited_coords.insert(result.front());
+    while (result.size() != i_size) {
+      if (result.size() == 11) {
+        int k = 0;
+        k;
+        }
       std::array<int, 3> last_pos = deserialize(result.back());
-      std::array<int, 3> pre_last_pos = deserialize(pre_last);
       std::vector<double> pherom;
       std::vector<std::array<int, 3>> poss_pos;
       for (const auto& g : gaps) {
         std::array<int, 3> cur = { last_pos[0] + g[0], last_pos[1] + g[1], last_pos[2] + g[2] };
-        if (cur == pre_last_pos) {
+        const auto& checked = serialize(cur);
+        if (visited_coords.find(checked) != std::end(visited_coords)
+          || visited_rotations.back().find(checked) != std::end(visited_rotations.back())) {
           continue;
           }
 
-        const auto& checked_pair = std::make_pair(std::to_string(i - 1), serialize(g));
+        const auto& checked_pair = std::make_pair(std::to_string(result.size() - 1), serialize(g));
         if (i_memory.find(checked_pair) != i_memory.end()) {
           pherom.push_back(i_memory.at(checked_pair));
           }
         else {
           pherom.push_back(200.0);
           }
-        
+
         poss_pos.push_back(cur);
+        }
+
+      if (poss_pos.empty()) {
+        visited_coords.erase(result.back());
+        visited_rotations.pop_back();
+        result.pop_back();
+        continue;
         }
 
       double sum = std::accumulate(std::begin(pherom), std::end(pherom), 0.0);
@@ -273,14 +289,16 @@ namespace aco {
 
       pherom.back() = 1.01;
       double rand_val = static_cast<double>(rand() % 10000) / 10000.0;
-      pre_last = result.back();
-      result.push_back(
-        serialize(poss_pos[std::distance(
-          std::begin(pherom), 
-          std::lower_bound(std::begin(pherom), std::end(pherom), rand_val)
-          )]));
-      } 
-    
+      auto idx = std::distance(
+        std::begin(pherom),
+        std::lower_bound(std::begin(pherom), std::end(pherom), rand_val)
+      );
+      result.push_back(serialize(poss_pos[idx]));
+      visited_coords.insert(result.back());
+      visited_rotations.back().insert(result.back());
+      visited_rotations.emplace_back();
+      }
+
     return result;
     }
 

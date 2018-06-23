@@ -383,10 +383,10 @@ void Train() {
 
 struct ACOParams {
   size_t generation_am_ = 500;
-  size_t ants_in_generation_ = 500;
-  double rho_ = 0.4;
+  size_t ants_in_generation_ = 200;
+  double rho_ = 0.1;
   std::function<double(int)> pheromon_calc;
-  double tau0_ = 0.1;
+  double tau0_ = 0.4;
   double tau1_ = 1.0;
   };
 
