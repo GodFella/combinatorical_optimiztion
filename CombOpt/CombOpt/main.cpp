@@ -387,7 +387,7 @@ struct ACOParams {
   double rho_ = 0.1;
   std::function<double(int)> pheromon_calc;
   double tau0_ = 0.4;
-  double tau1_ = 1.0;
+  double tau1_ = 1000000000.0;
   };
 
 namespace {
@@ -458,7 +458,7 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
       fo << std::endl;
       }
 
-    aco::pheromon_expire(memory, i_aco.rho_);
+    //aco::pheromon_expire(memory, i_aco.rho_);
 
     std::cout << "    " << min_energy << std::endl;
     }

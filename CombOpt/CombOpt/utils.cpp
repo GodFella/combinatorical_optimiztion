@@ -264,7 +264,8 @@ namespace aco {
 
         const auto& checked_pair = std::make_pair(std::to_string(result.size() - 1), serialize(g));
         if (i_memory.find(checked_pair) != i_memory.end()) {
-          pherom.push_back(i_memory.at(checked_pair));
+          const double e = std::exp(i_memory.at(checked_pair));
+          pherom.push_back(e / (e + 1));
           }
         else {
           pherom.push_back(200.0);
