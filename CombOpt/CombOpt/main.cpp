@@ -11,6 +11,8 @@
 #include <functional>
 #include <string>
 #include <map>
+#include <array>
+#include <sstream>
 
 class PackStatistics {
 public:
@@ -381,17 +383,37 @@ void Train() {
 
 struct ACOParams {
   size_t generation_am_ = 500;
-  size_t ants_in_generation_ = 200;
-  double rho_ = 0.1;
+  size_t ants_in_generation_ = 500;
+  double rho_ = 0.4;
   std::function<double(int)> pheromon_calc;
+  double tau0_ = 0.1;
+  double tau1_ = 1.0;
   };
+
+namespace {
+  inline std::string serialize(const std::array<int, 3>& i_arr) {
+    return std::to_string(i_arr[0]) + " " + std::to_string(i_arr[1]) + " " + std::to_string(i_arr[2]);
+    }
+  std::array<int, 3> deserialize(const std::string& i_serialized) {
+    std::stringstream ss;
+    ss << i_serialized;
+    std::array<int, 3> result = { { 0, 0, 0 } };
+    for (size_t j = 0; j < 3; ++j) {
+      ss >> result[j];
+      }
+
+    return result;
+    }
+  }
 
 std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams& i_aco, const std::string& i_mask) {
   aco::TMemory memory;
   int min_energy = 0;
   std::vector<std::string> min_path;
 
-  srand((std::chrono::system_clock::now().time_since_epoch().count(), 100));
+  std::ofstream fo("output.txt");
+
+  srand(100);
   for (size_t g_idx = 0; g_idx < i_aco.generation_am_; ++g_idx) {
     std::vector<aco::TMemory> local_memories;
     std::cout << " generation " << g_idx << std::endl;
@@ -410,18 +432,30 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
       local_memories.emplace_back();
       const double delta_tau = i_aco.pheromon_calc(std::abs(cur_energy));
       for (size_t i = 0; i < path.size() - 1; ++i) {
-        auto p = std::make_pair(path[i], path[i + 1]);
-        if (p.first > p.second) {
-          std::swap(p.first, p.second);
-          }
-        local_memories.back()[p] += delta_tau;
+        const auto& a = deserialize(path[i]);
+        const auto& b = deserialize(path[i + 1]);
+        auto p = std::make_pair(std::to_string(i), serialize({ b[0] - a[0], b[1] - a[1], b[2] - a[2] }));
+        local_memories.back()[p] = delta_tau;
         }
       }
 
+    std::cout << local_memories.size() << std::endl;
+
     for (const auto& mem : local_memories) {
       for (const auto& fragment : mem) {
-        memory[fragment.first] += fragment.second;
+        auto& cur_mem = memory[fragment.first];
+        cur_mem = std::max(std::min(i_aco.tau1_, cur_mem + fragment.second), i_aco.tau0_);
         }
+      }
+
+    if (g_idx % 1 == 0) {
+      fo << "generation " << g_idx << " :" << std::endl;
+      fo << "_______________________" << std::endl;
+      for (const auto& p : memory) {
+        fo << p.first.first << " ---- " << p.first.second << " : " << p.second << std::endl;
+        }
+      fo << std::endl;
+      fo << std::endl;
       }
 
     aco::pheromon_expire(memory, i_aco.rho_);
@@ -447,9 +481,11 @@ int main() {
 
     ACOParams params;
     params.pheromon_calc = [str](int val) -> double {
-      const double prop = static_cast<double>(val) / static_cast<double>(str.size());
+     /* const double prop = static_cast<double>(val) / static_cast<double>(str.size());
       const double e = std::exp(prop);
-      return e / (e + 1);
+      return e / (e + 1); */
+      const double l = static_cast<double>(str.size());
+      return static_cast<double>(val) / (l * l);
       };
 
     std::vector<std::string> result;

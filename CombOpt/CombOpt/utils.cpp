@@ -252,12 +252,8 @@ namespace aco {
         if (cur == pre_last_pos) {
           continue;
           }
-        std::array<std::string, 2> edge = { serialize(cur), result.back() };
-        if (edge[0] > edge[1]) {
-          std::swap(edge[0], edge[1]);
-          }
 
-        const auto& checked_pair = std::make_pair(edge[0], edge[1]);
+        const auto& checked_pair = std::make_pair(std::to_string(i - 1), serialize(g));
         if (i_memory.find(checked_pair) != i_memory.end()) {
           pherom.push_back(i_memory.at(checked_pair));
           }
