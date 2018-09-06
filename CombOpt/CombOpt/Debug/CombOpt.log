@@ -1,6 +1,2 @@
-﻿  utils.cpp
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(83): warning C4018: '<': signed/unsigned mismatch
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(84): warning C4018: '<': signed/unsigned mismatch
-d:\cppprojects\projects\git\combopt\combopt\utils.cpp(160): warning C4018: '>=': signed/unsigned mismatch
-  CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.exe
+﻿  CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.exe
   CombOpt.vcxproj -> D:\CppProjects\projects\Git\CombOpt\Debug\CombOpt.pdb (Partial PDB)

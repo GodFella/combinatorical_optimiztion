@@ -37,7 +37,8 @@ public:
 namespace aco {
   using TMemory = std::map<std::pair<std::string, std::string>, double>;
   
-  std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size);
+  std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size, const std::string& i_mask);
+  std::vector<std::string> dls(const std::vector<std::string>& i_initial, int radius, const std::string& i_mask);
   bool hasIntersections(const std::vector<std::string>& i_path);
   int computeEnergy(const std::vector<std::string>& i_path, const std::string& i_mask);
   void pheromon_expire(TMemory& io_memory, double rho);

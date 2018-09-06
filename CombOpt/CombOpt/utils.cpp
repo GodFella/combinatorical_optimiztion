@@ -237,22 +237,43 @@ namespace {
   }
 
 namespace aco {
-  std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size) {
+  
+  int computeEnergyDiff(std::map<std::string, size_t>& info, const std::string& to_insert, int idx, const std::string& i_mask) {
+    if (i_mask[idx] != '1') {
+      return 0;
+      }
+
+    std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
+
+    int diff = 0;
+    for (const auto& g : gaps) {
+      const auto& last = deserialize(to_insert);
+      std::array<int, 3> cur = { { last[0] + g[0], last[1] + g[1], last[2] + g[2] } };
+      const auto& ser_cur = serialize(cur);
+      if (info.find(ser_cur) != std::end(info) && info[ser_cur] < idx - 1 && i_mask[info[ser_cur]] == '1') {
+        ++diff;
+        }
+      }
+
+    return diff;
+    }
+  
+  std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size, const std::string& i_mask) {
     
     std::vector<std::string> result;
     result.push_back("0 0 0");
     std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
-    std::set<std::string> visited_coords;
+    std::map<std::string, size_t> visited_coords;
     std::vector<std::set<std::string>> visited_rotations;
     visited_rotations.emplace_back();
-    visited_coords.insert(result.front());
+    visited_coords[result.front()] = 0;
     while (result.size() != i_size) {
       if (result.size() == 11) {
         int k = 0;
         k;
         }
       std::array<int, 3> last_pos = deserialize(result.back());
-      std::vector<double> pherom;
+      std::vector<double> probs;
       std::vector<std::array<int, 3>> poss_pos;
       for (const auto& g : gaps) {
         std::array<int, 3> cur = { last_pos[0] + g[0], last_pos[1] + g[1], last_pos[2] + g[2] };
@@ -265,10 +286,14 @@ namespace aco {
         const auto& checked_pair = std::make_pair(std::to_string(result.size() - 1), serialize(g));
         if (i_memory.find(checked_pair) != i_memory.end()) {
           const double e = std::exp(i_memory.at(checked_pair));
-          pherom.push_back(e / (e + 1));
+          //const double pherom_part = e / (e + 1);
+          const double pherom_part = e;
+          double eur_part = std::exp(computeEnergyDiff(visited_coords, checked, visited_coords.size(), i_mask));
+          eur_part *= eur_part;
+          probs.push_back(pherom_part * eur_part);
           }
         else {
-          pherom.push_back(200.0);
+          probs.push_back(200.0);
           }
 
         poss_pos.push_back(cur);
@@ -281,21 +306,21 @@ namespace aco {
         continue;
         }
 
-      double sum = std::accumulate(std::begin(pherom), std::end(pherom), 0.0);
-      pherom[0] /= sum;
-      for (unsigned short i = 1; i < pherom.size(); ++i) {
-        pherom[i] /= sum;
-        pherom[i] += pherom[i - 1];
+      double sum = std::accumulate(std::begin(probs), std::end(probs), 0.0);
+      probs[0] /= sum;
+      for (unsigned short i = 1; i < probs.size(); ++i) {
+        probs[i] /= sum;
+        probs[i] += probs[i - 1];
         }
 
-      pherom.back() = 1.01;
+      probs.back() = 1.01;
       double rand_val = static_cast<double>(rand() % 10000) / 10000.0;
       auto idx = std::distance(
-        std::begin(pherom),
-        std::lower_bound(std::begin(pherom), std::end(pherom), rand_val)
+        std::begin(probs),
+        std::lower_bound(std::begin(probs), std::end(probs), rand_val)
       );
       result.push_back(serialize(poss_pos[idx]));
-      visited_coords.insert(result.back());
+      visited_coords[result.back()] = result.size() - 1;
       visited_rotations.back().insert(result.back());
       visited_rotations.emplace_back();
       }
@@ -343,6 +368,71 @@ namespace aco {
       }
     
     return -energy;
+    }
+
+  bool findNextBetter(std::vector<std::string>& better, int& better_energy, int cur_best_energy,
+    size_t pos, int radius, const std::string& i_mask, std::vector<std::pair<size_t, std::array<int, 3>>>& changes) {
+    if (radius == 0 || pos == better.size()) {
+      auto possible_better = better;
+      for (const auto& ch : changes) {
+        for (size_t i = ch.first; i < better.size(); ++i) {
+          auto n = deserialize(possible_better[i]);
+          n[0] += ch.second[0];
+          n[1] += ch.second[1];
+          n[2] += ch.second[2];
+          possible_better[i] = serialize(n);
+          }
+        }
+      if (hasIntersections(possible_better)) {
+        return false;
+        }
+      const auto possible_better_en = computeEnergy(possible_better, i_mask);
+      if (possible_better_en < cur_best_energy) {
+        better = possible_better;
+        better_energy = possible_better_en;
+        return true;
+        }
+
+      return false;
+      }
+
+    if (findNextBetter(better, better_energy, cur_best_energy, pos + 1, radius, i_mask, changes)) {
+      return true;
+      }
+
+    std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
+    for (const auto& g : gaps) {
+      const auto& last = deserialize(better[pos]);
+      const auto& pre_last = deserialize(better[pos - 1]);
+      const std::array<int, 3> cur_rot = { last[0] - pre_last[0], last[1] - pre_last[1], last[2] - pre_last[2] };
+      const std::array<int, 3> cur_change = { g[0] - cur_rot[0], g[1] - cur_rot[1], g[2] - cur_rot[2] };
+      const std::array<int, 3> zero = { 0, 0, 0 };
+      if (cur_change == zero) {
+        continue;
+        }
+      changes.push_back({ pos, cur_change });
+      if (findNextBetter(better, better_energy, cur_best_energy, pos + 1, radius - 1, i_mask, changes)) {
+        return true;
+        }
+      changes.pop_back();
+      }
+
+    return false;
+    }
+
+  std::vector<std::string> dls(const std::vector<std::string>& i_initial, int radius, const std::string& i_mask) {
+    int energy = computeEnergy(i_initial, i_mask);
+    std::vector<std::string> better = i_initial, best = i_initial;
+    int better_energy = 0;
+    std::vector<std::pair<size_t, std::array<int, 3>>> changes;
+    while (findNextBetter(better, better_energy, energy, 1, radius, i_mask, changes)) {
+      changes.clear();
+      energy = better_energy;
+      best = better;
+      std::cout << "   dls: " << energy << std::endl;
+    }
+    std::cout << "_____ dls finshed" << std::endl;
+    return best;
     }
 
   void pheromon_expire(TMemory& io_memory, double rho) {

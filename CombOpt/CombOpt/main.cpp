@@ -382,12 +382,14 @@ void Train() {
   }
 
 struct ACOParams {
-  size_t generation_am_ = 500;
+  size_t generation_am_ = 5;
   size_t ants_in_generation_ = 200;
   double rho_ = 0.1;
   std::function<double(int)> pheromon_calc;
-  double tau0_ = 0.4;
-  double tau1_ = 1000000000.0;
+  double tau0_ = 0.2;
+  double tau1_ = 0.8;
+  double elith_amount = 0.3;
+  double deamon_am = 0.05;
   };
 
 namespace {
@@ -411,56 +413,58 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
   int min_energy = 0;
   std::vector<std::string> min_path;
 
-  std::ofstream fo("output.txt");
-
   srand(100);
-  for (size_t g_idx = 0; g_idx < i_aco.generation_am_; ++g_idx) {
+  size_t gen_wo_better = 0;
+  while (gen_wo_better < i_aco.generation_am_) {
     std::vector<aco::TMemory> local_memories;
-    std::cout << " generation " << g_idx << std::endl;
+    std::vector<std::pair<int, std::vector<std::string>>> generated_paths;
     for (size_t a_idx = 0; a_idx < i_aco.ants_in_generation_; ++a_idx) {
-      const auto& path = aco::generatePath(memory, chain_size);
+      const auto& path = aco::generatePath(memory, chain_size, i_mask);
       if (aco::hasIntersections(path)) {
         continue;
         }
+      generated_paths.push_back({ aco::computeEnergy(path, i_mask), path });
+      }
+    std::sort(std::begin(generated_paths), std::end(generated_paths));
+    std::for_each(std::begin(generated_paths), 
+      std::next(std::begin(generated_paths), static_cast<size_t>(generated_paths.size() * i_aco.deamon_am)),
+      [&i_mask](std::pair<int, std::vector<std::string>>& i_path) { 
+        i_path.second = aco::dls(i_path.second, 2, i_mask);
+        i_path.first = aco::computeEnergy(i_path.second, i_mask);
+      });
+    std::sort(std::begin(generated_paths), std::end(generated_paths));
 
-      int cur_energy = aco::computeEnergy(path, i_mask);
+    ++gen_wo_better;
+    for (size_t a_idx = 0; a_idx < static_cast<size_t>(i_aco.ants_in_generation_ * i_aco.elith_amount); ++a_idx) {
+      const auto& path = generated_paths[a_idx];
+
+      int cur_energy = path.first;
       if (cur_energy < min_energy) {
         min_energy = cur_energy;
-        min_path = path;
+        min_path = path.second;
+        gen_wo_better = 0;
         }
 
       local_memories.emplace_back();
       const double delta_tau = i_aco.pheromon_calc(std::abs(cur_energy));
-      for (size_t i = 0; i < path.size() - 1; ++i) {
-        const auto& a = deserialize(path[i]);
-        const auto& b = deserialize(path[i + 1]);
+      for (size_t i = 0; i < path.second.size() - 1; ++i) {
+        const auto& a = deserialize(path.second[i]);
+        const auto& b = deserialize(path.second[i + 1]);
         auto p = std::make_pair(std::to_string(i), serialize({ b[0] - a[0], b[1] - a[1], b[2] - a[2] }));
         local_memories.back()[p] = delta_tau;
         }
-      }
 
-    std::cout << local_memories.size() << std::endl;
+      std::cout << local_memories.size() << std::endl;
 
-    for (const auto& mem : local_memories) {
-      for (const auto& fragment : mem) {
-        auto& cur_mem = memory[fragment.first];
-        cur_mem = std::max(std::min(i_aco.tau1_, cur_mem + fragment.second), i_aco.tau0_);
+      for (const auto& mem : local_memories) {
+        for (const auto& fragment : mem) {
+          auto& cur_mem = memory[fragment.first];
+          cur_mem = std::max(std::min(i_aco.tau1_, cur_mem + fragment.second), i_aco.tau0_);
+          }
         }
+
+      //aco::pheromon_expire(memory, i_aco.rho_);
       }
-
-    if (g_idx % 1 == 0) {
-      fo << "generation " << g_idx << " :" << std::endl;
-      fo << "_______________________" << std::endl;
-      for (const auto& p : memory) {
-        fo << p.first.first << " ---- " << p.first.second << " : " << p.second << std::endl;
-        }
-      fo << std::endl;
-      fo << std::endl;
-      }
-
-    //aco::pheromon_expire(memory, i_aco.rho_);
-
-    std::cout << "    " << min_energy << std::endl;
     }
 
   return { min_path, min_energy };
@@ -471,10 +475,10 @@ int main() {
   //Compare();
 
   std::ifstream fi("input.txt");
-  std::ofstream fo("output.txt");
   size_t m = 0;
   fi >> m;
   
+  std::ofstream fo("output.txt");
   for (size_t i = 0; i < m; ++i) {
     std::string str;
     fi >> str;
@@ -491,11 +495,12 @@ int main() {
     std::vector<std::string> result;
     int energy = 0;
     std::tie(result, energy) = ACO(str.size(), params, str);
-
-    std::cout << "Min energy = " << energy << std::endl;
+    
+    fo << "Min energy = " << energy << std::endl;
     for (const auto& s : result) {
-      std::cout << s << std::endl;
+      fo << s << std::endl;
       }
+    fo << std::endl;
     }
 
  
