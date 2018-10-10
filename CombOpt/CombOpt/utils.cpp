@@ -261,6 +261,9 @@ namespace aco {
   std::vector<std::string> generatePath(const TMemory& i_memory, size_t i_size, const std::string& i_mask) {
     
     std::vector<std::string> result;
+    if (i_size == 0) {
+      return result;
+      }
     result.push_back("0 0 0");
     std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
     std::map<std::string, size_t> visited_coords;
@@ -284,17 +287,16 @@ namespace aco {
           }
 
         const auto& checked_pair = std::make_pair(std::to_string(result.size() - 1), serialize(g));
+        double pherom_part = 0.2;
         if (i_memory.find(checked_pair) != i_memory.end()) {
           const double e = std::exp(i_memory.at(checked_pair));
           //const double pherom_part = e / (e + 1);
-          const double pherom_part = e;
-          double eur_part = std::exp(computeEnergyDiff(visited_coords, checked, visited_coords.size(), i_mask));
-          eur_part *= eur_part;
-          probs.push_back(pherom_part * eur_part);
+          pherom_part = e;
           }
-        else {
-          probs.push_back(200.0);
-          }
+
+        double eur_part = std::exp(computeEnergyDiff(visited_coords, checked, visited_coords.size(), i_mask));
+        eur_part *= eur_part;
+        probs.push_back(pherom_part * eur_part);
 
         poss_pos.push_back(cur);
         }
@@ -370,6 +372,68 @@ namespace aco {
     return -energy;
     }
 
+  bool findRandNextBetter(std::vector<std::string>& better, int& better_energy, int cur_best_energy,
+    size_t pos, int radius, const std::string& i_mask, std::vector<std::pair<size_t, std::array<int, 3>>>& changes) {
+    if (radius == 0 || pos == better.size()) {
+      if (changes.empty()) {
+        return false;
+        }
+      auto possible_better = better;
+      for (const auto& ch : changes) {
+        for (size_t i = ch.first; i < better.size(); ++i) {
+          auto n = deserialize(possible_better[i]);
+          n[0] += ch.second[0];
+          n[1] += ch.second[1];
+          n[2] += ch.second[2];
+          possible_better[i] = serialize(n);
+          }
+        }
+      size_t idx_to_start = changes.back().first + 1;
+      auto residue = generatePath(aco::TMemory(), better.size() - idx_to_start, i_mask.substr(idx_to_start));
+      const auto& initial = idx_to_start < possible_better.size() ? 
+        deserialize(possible_better[idx_to_start]) : std::array<int, 3>();
+      for (size_t i = idx_to_start; i < better.size(); ++i) {
+        const auto& cur_update = deserialize(residue[i - idx_to_start]);
+        possible_better[i] = serialize({ cur_update[0] + initial[0], cur_update[1] + initial[1], cur_update[2] + initial[2] });
+        }
+
+      if (hasIntersections(possible_better)) {
+        return false;
+        }
+      const auto possible_better_en = computeEnergy(possible_better, i_mask);
+      if (possible_better_en < cur_best_energy) {
+        better = possible_better;
+        better_energy = possible_better_en;
+        return true;
+        }
+
+      return false;
+      }
+
+    if (findRandNextBetter(better, better_energy, cur_best_energy, pos + 1, radius, i_mask, changes)) {
+      return true;
+      }
+
+    std::vector<std::array<int, 3>> gaps = { { 1, 0, 0 },{ -1, 0, 0 },{ 0, 1, 0 },{ 0, -1, 0 },{ 0, 0, 1 },{ 0, 0, -1 } };
+    for (const auto& g : gaps) {
+      const auto& last = deserialize(better[pos]);
+      const auto& pre_last = deserialize(better[pos - 1]);
+      const std::array<int, 3> cur_rot = { last[0] - pre_last[0], last[1] - pre_last[1], last[2] - pre_last[2] };
+      const std::array<int, 3> cur_change = { g[0] - cur_rot[0], g[1] - cur_rot[1], g[2] - cur_rot[2] };
+      const std::array<int, 3> zero = { 0, 0, 0 };
+      if (cur_change == zero) {
+        continue;
+        }
+      changes.push_back({ pos, cur_change });
+      if (findRandNextBetter(better, better_energy, cur_best_energy, pos + 1, radius - 1, i_mask, changes)) {
+        return true;
+        }
+      changes.pop_back();
+      }
+
+    return false;
+    }
+
   bool findNextBetter(std::vector<std::string>& better, int& better_energy, int cur_best_energy,
     size_t pos, int radius, const std::string& i_mask, std::vector<std::pair<size_t, std::array<int, 3>>>& changes) {
     if (radius == 0 || pos == better.size()) {
@@ -432,6 +496,21 @@ namespace aco {
       std::cout << "   dls: " << energy << std::endl;
     }
     std::cout << "_____ dls finshed" << std::endl;
+    return best;
+    }
+
+  std::vector<std::string> rdls(const std::vector<std::string>& i_initial, int radius, const std::string& i_mask) {
+    int energy = computeEnergy(i_initial, i_mask);
+    std::vector<std::string> better = i_initial, best = i_initial;
+    int better_energy = 0;
+    std::vector<std::pair<size_t, std::array<int, 3>>> changes;
+    while (findRandNextBetter(better, better_energy, energy, 1, radius, i_mask, changes)) {
+      changes.clear();
+      energy = better_energy;
+      best = better;
+      //std::cout << "   dls: " << energy << std::endl;
+      }
+    //std::cout << "_____ dls finshed" << std::endl;
     return best;
     }
 

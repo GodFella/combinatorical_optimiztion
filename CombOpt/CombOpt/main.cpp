@@ -382,13 +382,13 @@ void Train() {
   }
 
 struct ACOParams {
-  size_t generation_am_ = 5;
+  size_t generation_am_ = 10;
   size_t ants_in_generation_ = 200;
   double rho_ = 0.1;
   std::function<double(int)> pheromon_calc;
   double tau0_ = 0.2;
   double tau1_ = 0.8;
-  double elith_amount = 0.3;
+  double elith_amount = 0.05;
   double deamon_am = 0.05;
   };
 
@@ -435,8 +435,19 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
     std::sort(std::begin(generated_paths), std::end(generated_paths));
 
     ++gen_wo_better;
-    for (size_t a_idx = 0; a_idx < static_cast<size_t>(i_aco.ants_in_generation_ * i_aco.elith_amount); ++a_idx) {
+    const size_t pherom_limit = static_cast<size_t>(i_aco.ants_in_generation_ * i_aco.elith_amount);
+    std::vector<std::string> prev_path;
+    size_t cur_used_ferom = 0;
+    for (size_t a_idx = 0; a_idx < i_aco.ants_in_generation_; ++a_idx) {
       const auto& path = generated_paths[a_idx];
+      if (prev_path == path.second) {
+        continue;
+        }
+      if (cur_used_ferom >= pherom_limit) {
+        break;
+        }
+      ++cur_used_ferom;
+      prev_path = path.second;
 
       int cur_energy = path.first;
       if (cur_energy < min_energy) {
@@ -454,8 +465,6 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
         local_memories.back()[p] = delta_tau;
         }
 
-      std::cout << local_memories.size() << std::endl;
-
       for (const auto& mem : local_memories) {
         for (const auto& fragment : mem) {
           auto& cur_mem = memory[fragment.first];
@@ -463,8 +472,10 @@ std::tuple<std::vector<std::string>, int> ACO(size_t chain_size, const ACOParams
           }
         }
 
-      //aco::pheromon_expire(memory, i_aco.rho_);
+      aco::pheromon_expire(memory, i_aco.rho_);
       }
+
+    std::cout << min_energy << " , " << cur_used_ferom <<  std::endl;
     }
 
   return { min_path, min_energy };
